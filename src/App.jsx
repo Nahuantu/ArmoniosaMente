@@ -9,7 +9,11 @@ import logoImage from './logo.png';
 import fondoImage from './fondo-meditacion.png';
 import primerosPasosBg from './Primeros pasos.jpg';
 import gongBg from './Gong.jpg';
-import { auth, loginWithGoogle, db, ref, onValue } from './firebase';
+
+// Importaciones directas de Firebase para evitar errores
+import { auth, loginWithGoogle, db } from './firebase';
+import { ref, onValue, set, remove, onDisconnect } from 'firebase/database';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const SECCIONES = [
   {
