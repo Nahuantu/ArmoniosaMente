@@ -374,7 +374,9 @@ const [usuariosPracticando, setUsuariosPracticando] = useState([]);
     if (estaPracticando) {
       set(userStatusRef, {
         email: user.email,
-        nombre: user.displayName || "Usuario",
+        nombre: user.displayName || "Practicante",
+        foto: user.photoURL || logoImage,
+        estado: 'Meditando',
         timestamp: Date.now()
       });
       onDisconnect(userStatusRef).remove();
@@ -382,27 +384,6 @@ const [usuariosPracticando, setUsuariosPracticando] = useState([]);
       remove(userStatusRef);
     }
   };
-  
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        setEnInicio(false); // Esto pasa automáticamente al menú cuando inicias sesión
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // ESTADOS CON PERSISTENCIA LOCAL (localStorage - 100% LIMPIOS EN CERO)
-  const [lecciones, setLecciones] = useState(() => {
-    const guardado = localStorage.getItem('armoniosa_lecciones');
-    return guardado !== null ? JSON.parse(guardado) : LECCIONES_INICIALES;
-  });
-
-  const [minutosTotales, setMinutosTotales] = useState(() => {
-    const guardado = localStorage.getItem('armoniosa_minutos_totales');
-    return guardado !== null ? JSON.parse(guardado) : 0;
-  });
 
   const [diasPracticados, setDiasPracticados] = useState(() => {
     const guardado = localStorage.getItem('armoniosa_dias_practicados');
@@ -1721,10 +1702,10 @@ const [usuariosPracticando, setUsuariosPracticando] = useState([]);
                       Practicando en este momento
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono text-white/60">{usuariosPracticando} meditando ahora</span>
+                  <span className="text-[10px] font-mono text-white/60">{usuariosPracticando.length} meditando ahora</span>
                 </div>
 
-                {usuariosPracticando > 0 && (
+                {usuariosPracticando.length > 0 && (
                   <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1">
                     {usuariosPracticando.map(u => (
                       <div key={u.id} className="relative flex flex-col items-center shrink-0 group">
