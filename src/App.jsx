@@ -9,7 +9,8 @@ import logoImage from './logo.png';
 import fondoImage from './fondo-meditacion.png';
 import primerosPasosBg from './Primeros pasos.jpg';
 import gongBg from './Gong.jpg';
-import { loginWithGoogle } from './firebase';
+import { auth, loginWithGoogle } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const SECCIONES = [
   {
@@ -341,6 +342,18 @@ export default function App() {
   const [seccionAbierta, setSeccionAbierta] = useState(null);
   const [indiceActivo, setIndiceActivo] = useState(0);
   const [seArrastro, setSeArrastro] = useState(false);
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        setEnInicio(false); // Esto pasa automáticamente al menú cuando inicias sesión
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // ESTADOS CON PERSISTENCIA LOCAL (localStorage - 100% LIMPIOS EN CERO)
   const [lecciones, setLecciones] = useState(() => {
