@@ -9,8 +9,7 @@ import logoImage from './logo.png';
 import fondoImage from './fondo-meditacion.png';
 import primerosPasosBg from './Primeros pasos.jpg';
 import gongBg from './Gong.jpg';
-import { auth, loginWithGoogle } from './firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { auth, loginWithGoogle, db } from './firebase';
 
 const SECCIONES = [
   {
@@ -345,6 +344,41 @@ export default function App() {
 
   const [user, setUser] = useState(null);
 
+const [usuariosPracticando, setUsuariosPracticando] = useState([]);
+
+  // Escuchar en tiempo real quiénes están practicando
+  useEffect(() => {
+    const statusRef = ref(db, 'practicantes_activos');
+    onValue(statusRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const listaUsuarios = Object.keys(data).map(key => ({
+          id: key,
+          ...data[key]
+        }));
+        setUsuariosPracticando(listaUsuarios);
+      } else {
+        setUsuariosPracticando([]);
+      }
+    });
+  }, []);
+
+  const registrarPracticaActiva = (estaPracticando) => {
+    if (!user) return;
+    const userStatusRef = ref(db, `practicantes_activos/${user.uid}`);
+    
+    if (estaPracticando) {
+      set(userStatusRef, {
+        email: user.email,
+        nombre: user.displayName || "Usuario",
+        timestamp: Date.now()
+      });
+      onDisconnect(userStatusRef).remove();
+    } else {
+      remove(userStatusRef);
+    }
+  };
+  
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -1683,12 +1717,12 @@ export default function App() {
                       Practicando en este momento
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono text-white/60">{USUARIOS_CONECTADOS.length} meditando ahora</span>
+                  <span className="text-[10px] font-mono text-white/60">{usuariosPracticando} meditando ahora</span>
                 </div>
 
-                {USUARIOS_CONECTADOS.length > 0 && (
+                {usuariosPracticando > 0 && (
                   <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1">
-                    {USUARIOS_CONECTADOS.map(u => (
+                    {usuariosPracticando.map(u => (
                       <div key={u.id} className="relative flex flex-col items-center shrink-0 group">
                         <div className="relative">
                           <img 
