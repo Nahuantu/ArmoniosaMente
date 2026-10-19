@@ -9,6 +9,7 @@ import logoImage from './logo.png';
 import fondoImage from './fondo-meditacion.png';
 import primerosPasosBg from './Primeros pasos.jpg';
 import gongBg from './Gong.jpg';
+import { loginWithGoogle } from './firebase';
 
 const SECCIONES = [
   {
@@ -666,7 +667,7 @@ export default function App() {
                 className="w-full flex flex-col gap-2.5 mt-2"
               >
                 <button
-                  onClick={() => setEnInicio(false)}
+                 onClick={loginWithGoogle}
                   className="w-full py-3 px-4 rounded-xl bg-[#3B82F6] hover:bg-[#2563EB] text-white text-xs font-medium tracking-wide transition-all shadow-[0_4px_20px_rgba(59,130,246,0.4)] cursor-pointer"
                 >
                   Iniciar sesión con Google
