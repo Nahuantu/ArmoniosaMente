@@ -132,7 +132,6 @@ const ARTICULOS_CALMA = [
   }
 ];
 
-const USUARIOS_CONECTADOS = [];
 const COMENTARIOS_INICIALES = [];
 
 const RECONOCIMIENTOS_LOGROS = [
@@ -347,8 +346,38 @@ export default function App() {
   const [seArrastro, setSeArrastro] = useState(false);
 
   const [user, setUser] = useState(null);
+  const [usuariosPracticando, setUsuariosPracticando] = useState([]);
 
-const [usuariosPracticando, setUsuariosPracticando] = useState([]);
+  // ESTADOS CON PERSISTENCIA LOCAL (localStorage)
+  const [lecciones, setLecciones] = useState(() => {
+    const guardado = localStorage.getItem('armoniosa_lecciones');
+    return guardado !== null ? JSON.parse(guardado) : LECCIONES_INICIALES;
+  });
+
+  const [minutosTotales, setMinutosTotales] = useState(() => {
+    const guardado = localStorage.getItem('armoniosa_minutos_totales');
+    return guardado !== null ? JSON.parse(guardado) : 0;
+  });
+
+  const [diasPracticados, setDiasPracticados] = useState(() => {
+    const guardado = localStorage.getItem('armoniosa_dias_practicados');
+    return guardado !== null ? JSON.parse(guardado) : [];
+  });
+
+  const [rachaSemanas, setRachaSemanas] = useState(() => {
+    const guardado = localStorage.getItem('armoniosa_racha_semanas');
+    return guardado !== null ? JSON.parse(guardado) : 0;
+  });
+
+  const [cronogramaSemanal, setCronogramaSemanal] = useState(() => {
+    const guardado = localStorage.getItem('armoniosa_cronograma');
+    return guardado !== null ? JSON.parse(guardado) : CRONOGRAMA_DEFAULT;
+  });
+
+  const [comentarios, setComentarios] = useState(() => {
+    const guardado = localStorage.getItem('armoniosa_comentarios');
+    return guardado !== null ? JSON.parse(guardado) : COMENTARIOS_INICIALES;
+  });
 
   // Escuchar en tiempo real quiénes están practicando
   useEffect(() => {
@@ -385,25 +414,15 @@ const [usuariosPracticando, setUsuariosPracticando] = useState([]);
     }
   };
 
-  const [diasPracticados, setDiasPracticados] = useState(() => {
-    const guardado = localStorage.getItem('armoniosa_dias_practicados');
-    return guardado !== null ? JSON.parse(guardado) : [];
-  });
-
-  const [rachaSemanas, setRachaSemanas] = useState(() => {
-    const guardado = localStorage.getItem('armoniosa_racha_semanas');
-    return guardado !== null ? JSON.parse(guardado) : 0;
-  });
-
-  const [cronogramaSemanal, setCronogramaSemanal] = useState(() => {
-    const guardado = localStorage.getItem('armoniosa_cronograma');
-    return guardado !== null ? JSON.parse(guardado) : CRONOGRAMA_DEFAULT;
-  });
-
-  const [comentarios, setComentarios] = useState(() => {
-    const guardado = localStorage.getItem('armoniosa_comentarios');
-    return guardado !== null ? JSON.parse(guardado) : COMENTARIOS_INICIALES;
-  });
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        setEnInicio(false);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const [leccionSeleccionada, setLeccionSeleccionada] = useState(null);
   const [fraseInspiradora, setFraseInspiradora] = useState(null);
@@ -476,6 +495,7 @@ const [usuariosPracticando, setUsuariosPracticando] = useState([]);
     } else if (corriendoTimer && tiempoRestante === 0) {
       setCorriendoTimer(false);
       reproducirSonido(sonidoFin, repeticionesFin);
+      registrarPracticaActiva(false);
       
       const hoyIdx = (new Date().getDay() + 6) % 7;
       setMinutosTotales(prev => prev + minutosSeleccionados);
@@ -495,6 +515,7 @@ const [usuariosPracticando, setUsuariosPracticando] = useState([]);
     } else if (reproduciendoGuiada && tiempoGuiadaRestante === 0) {
       setReproduciendoGuiada(false);
       reproducirSonido('cuenco', 2);
+      registrarPracticaActiva(false);
 
       if (meditacionGuiadaActiva) {
         const hoyIdx = (new Date().getDay() + 6) % 7;
@@ -511,14 +532,19 @@ const [usuariosPracticando, setUsuariosPracticando] = useState([]);
       if (tiempoRestante === 0) setTiempoRestante(minutosSeleccionados * 60);
       reproducirSonido(sonidoInicio, repeticionesInicio);
       setCorriendoTimer(true);
+      registrarPracticaActiva(true);
     }
   };
 
-  const pausarTimer = () => setCorriendoTimer(false);
+  const pausarTimer = () => {
+    setCorriendoTimer(false);
+    registrarPracticaActiva(false);
+  };
 
   const reiniciarTimer = () => {
     setCorriendoTimer(false);
     setTiempoRestante(minutosSeleccionados * 60);
+    registrarPracticaActiva(false);
   };
 
   const cambiarTiempo = (mins) => {
@@ -545,6 +571,7 @@ const [usuariosPracticando, setUsuariosPracticando] = useState([]);
     setTecnicaPreSeleccionada(null);
     setReproduciendoGuiada(true);
     reproducirSonido('cuenco', 1);
+    registrarPracticaActiva(true);
   };
 
   const agregarNuevoComentario = (e) => {
@@ -699,7 +726,7 @@ const [usuariosPracticando, setUsuariosPracticando] = useState([]);
                 className="w-full flex flex-col gap-2.5 mt-2"
               >
                 <button
-                 onClick={loginWithGoogle}
+                  onClick={loginWithGoogle}
                   className="w-full py-3 px-4 rounded-xl bg-[#3B82F6] hover:bg-[#2563EB] text-white text-xs font-medium tracking-wide transition-all shadow-[0_4px_20px_rgba(59,130,246,0.4)] cursor-pointer"
                 >
                   Iniciar sesión con Google
@@ -1277,6 +1304,7 @@ const [usuariosPracticando, setUsuariosPracticando] = useState([]);
                     onClick={() => {
                       setReproduciendoGuiada(false);
                       reproducirSonido('cuenco', 1);
+                      registrarPracticaActiva(false);
                     }}
                     className="px-8 py-3 rounded-full bg-purple-600 hover:bg-purple-500 text-white font-medium text-xs shadow-[0_4px_25px_rgba(168,85,247,0.5)] transition-all cursor-pointer mt-2"
                   >
